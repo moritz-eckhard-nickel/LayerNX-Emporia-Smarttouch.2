@@ -4,7 +4,8 @@ name: Release
 #  1. push a tag like v0.0.1, or
 #  2. push release notes docs/release-notes/vX.Y.Z.md for the versionName in
 #     app/build.gradle.kts – the workflow then creates the tag itself.
-# A version that already has a tag is never released twice.
+# A version that already has a tag is never built or released twice; pushing
+# changed notes for it only refreshes the text of the published release.
 on:
   push:
     tags: ["v*"]
@@ -12,6 +13,7 @@ on:
     paths:
       - "docs/release-notes/**"
       - ".github/workflows/release.yml"
+      - ".github/scripts/**"
 
 permissions:
   contents: write
@@ -32,6 +34,7 @@ jobs:
         id: version
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           version=$(sed -nE 's/^[[:space:]]*versionName = "([^"]+)".*/\1/p' app/build.gradle.kts)
@@ -48,8 +51,13 @@ jobs:
             echo "No release notes for v$version – nothing to release."
             echo "release=false" >> "$GITHUB_OUTPUT"
           elif gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$version" >/dev/null 2>&1; then
-            echo "v$version is already tagged – nothing to release."
             echo "release=false" >> "$GITHUB_OUTPUT"
+            if gh release view "v$version" >/dev/null 2>&1; then
+              echo "v$version is already released – only its notes will be refreshed."
+              echo "refresh=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "v$version is already tagged – nothing to release."
+            fi
           else
             echo "Releasing v$version from $GITHUB_REF_NAME @ $GITHUB_SHA"
             echo "release=true" >> "$GITHUB_OUTPUT"
@@ -123,8 +131,8 @@ jobs:
           mkdir -p dist
           cp "$apk" "dist/LayerNX-v$VERSION.apk"
           (cd dist && sha256sum "LayerNX-v$VERSION.apk" > "LayerNX-v$VERSION.apk.sha256")
-          cert=$(grep -m1 "certificate SHA-256 digest" "$RUNNER_TEMP/signature.txt" | awk -F': ' '{print $2}')
-          echo "CERT_SHA256=$cert" >> "$GITHUB_ENV"
+          .github/scripts/release-notes.sh "$VERSION" "dist/LayerNX-v$VERSION.apk" \
+            "$RUNNER_TEMP/signature.txt" "$SIGNING_MODE" > "$RUNNER_TEMP/notes.md"
 
       - name: Remove signing key
         if: always() && steps.version.outputs.release == 'true'
@@ -136,21 +144,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          notes="docs/release-notes/v$VERSION.md"
-          [ -f "$notes" ] || { echo "::error::$notes is missing"; exit 1; }
-          {
-            cat "$notes"
-            echo
-            echo "---"
-            echo
-            echo "**Datei:** \`LayerNX-v$VERSION.apk\` · SHA-256: \`$(cut -d' ' -f1 "dist/LayerNX-v$VERSION.apk.sha256")\`"
-            echo
-            echo "**Signaturzertifikat (SHA-256):** \`$CERT_SHA256\`"
-            if [ "$SIGNING_MODE" = "one-off" ]; then
-              echo
-              echo "> Diese Version wurde mit einem einmaligen Schlüssel signiert. Spätere Versionen mit dem dauerhaften Release-Schlüssel erfordern einmalig eine Neuinstallation (Einstellungen von LayerNX gehen dabei verloren)."
-            fi
-          } > "$RUNNER_TEMP/notes.md"
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then
             target_args=(--verify-tag)
           else
@@ -162,3 +155,25 @@ jobs:
             "${target_args[@]}" \
             "dist/LayerNX-v$VERSION.apk" \
             "dist/LayerNX-v$VERSION.apk.sha256"
+
+      - name: Refresh notes of the published release
+        if: steps.version.outputs.refresh == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/published"
+          mkdir -p "$dir"
+          gh release download "$TAG" --dir "$dir" \
+            --pattern "LayerNX-v$VERSION.apk" --pattern "LayerNX-v$VERSION.apk.sha256"
+          (cd "$dir" && sha256sum -c "LayerNX-v$VERSION.apk.sha256")
+          build_tools="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          "$build_tools/apksigner" verify --verbose --print-certs "$dir/LayerNX-v$VERSION.apk" > "$dir/signature.txt"
+          body=$(gh release view "$TAG" --json body --jq .body)
+          mode=permanent
+          case "$body" in *"einmaligen Schlüssel"*) mode=one-off ;; esac
+          .github/scripts/release-notes.sh "$VERSION" "$dir/LayerNX-v$VERSION.apk" "$dir/signature.txt" "$mode" \
+            > "$RUNNER_TEMP/notes.md"
+          gh release edit "$TAG" --notes-file "$RUNNER_TEMP/notes.md"
+          cat "$RUNNER_TEMP/notes.md"
