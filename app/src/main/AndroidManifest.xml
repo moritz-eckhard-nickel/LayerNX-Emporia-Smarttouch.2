@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        LayerNX requests no runtime permissions. Calls are only *prepared* through
+        ACTION_DIAL, so the system dialer, emergency calling and VoLTE stay untouched.
+
+        Package visibility (Android 11+): we only ask to see apps that are launchable or
+        that can act as a standard app for one of the launcher's roles.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.DIAL" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.DIAL" />
+            <data android:scheme="tel" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="smsto" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.APP_MESSAGING" />
+        </intent>
+        <intent>
+            <action android:name="android.media.action.STILL_IMAGE_CAMERA" />
+        </intent>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.APP_CONTACTS" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="content" android:host="com.android.contacts" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.APP_BROWSER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.APP_GALLERY" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="image/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.APP_MUSIC" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="audio/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SHOW_ALARMS" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SET_ALARM" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.APP_CALENDAR" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="content" android:host="com.android.calendar" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.APP_CALCULATOR" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.SETTINGS" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".LayerNXApp"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.LayerNX"
+        tools:targetApi="35">
+
+        <activity
+            android:name=".HomeActivity"
+            android:clearTaskOnLaunch="true"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:resumeWhilePausing="true"
+            android:stateNotNeeded="true"
+            android:taskAffinity=""
+            android:windowSoftInputMode="adjustNothing|stateAlwaysHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".AppsActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
+
+        <activity
+            android:name=".SettingsActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
+    </application>
+</manifest>

@@ -1,0 +1,128 @@
+name: Release
+
+# Push a tag like v0.0.1 to build, test, sign and publish a GitHub release.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build & publish ${{ github.ref_name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Tag must match versionName
+        run: |
+          set -euo pipefail
+          version=$(sed -nE 's/^[[:space:]]*versionName = "([^"]+)".*/\1/p' app/build.gradle.kts)
+          echo "versionName=$version, tag=$GITHUB_REF_NAME"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match versionName $version in app/build.gradle.kts"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Prepare signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.LAYERNX_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.LAYERNX_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.LAYERNX_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.LAYERNX_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          keystore="$RUNNER_TEMP/layernx-release.jks"
+          if [ -n "${KEYSTORE_BASE64}" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > "$keystore"
+            {
+              echo "LAYERNX_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+              echo "LAYERNX_KEY_ALIAS=$KEY_ALIAS"
+              echo "LAYERNX_KEY_PASSWORD=${KEY_PASSWORD:-$KEYSTORE_PASSWORD}"
+            } >> "$GITHUB_ENV"
+            echo "SIGNING_MODE=permanent" >> "$GITHUB_ENV"
+          else
+            # No release key configured yet: sign with a one-off key generated for this run.
+            # The APK is fully valid, but later releases signed with the permanent key cannot
+            # update it in place (see docs/RELEASING.md).
+            echo "::warning::Repository secrets for the release key are missing – signing with a one-off key."
+            password=$(openssl rand -hex 24)
+            echo "::add-mask::$password"
+            keytool -genkeypair -noprompt -keystore "$keystore" -storetype PKCS12 \
+              -storepass "$password" -keypass "$password" -alias layernx \
+              -keyalg RSA -keysize 4096 -validity 10000 \
+              -dname "CN=LayerNX Launcher, O=Moritz und Zen"
+            {
+              echo "LAYERNX_KEYSTORE_PASSWORD=$password"
+              echo "LAYERNX_KEY_ALIAS=layernx"
+              echo "LAYERNX_KEY_PASSWORD=$password"
+            } >> "$GITHUB_ENV"
+            echo "SIGNING_MODE=one-off" >> "$GITHUB_ENV"
+          fi
+          echo "LAYERNX_KEYSTORE_FILE=$keystore" >> "$GITHUB_ENV"
+
+      - name: Tests, lint and signed release build
+        run: ./gradlew --no-daemon --stacktrace testDebugUnitTest lintDebug assembleRelease
+
+      - name: Verify signature and package
+        run: |
+          set -euo pipefail
+          build_tools="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          apk=app/build/outputs/apk/release/app-release.apk
+          "$build_tools/apksigner" verify --verbose --print-certs "$apk" | tee "$RUNNER_TEMP/signature.txt"
+          "$build_tools/aapt2" dump badging "$apk" | head -1 | tee "$RUNNER_TEMP/badging.txt"
+          grep -q "versionName='$VERSION'" "$RUNNER_TEMP/badging.txt"
+          grep -q "package: name='com.layernx.launcher'" "$RUNNER_TEMP/badging.txt"
+
+          mkdir -p dist
+          cp "$apk" "dist/LayerNX-v$VERSION.apk"
+          (cd dist && sha256sum "LayerNX-v$VERSION.apk" > "LayerNX-v$VERSION.apk.sha256")
+          cert=$(grep -m1 "certificate SHA-256 digest" "$RUNNER_TEMP/signature.txt" | awk -F': ' '{print $2}')
+          echo "CERT_SHA256=$cert" >> "$GITHUB_ENV"
+
+      - name: Remove signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/layernx-release.jks"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          notes="docs/release-notes/v$VERSION.md"
+          [ -f "$notes" ] || { echo "::error::$notes is missing"; exit 1; }
+          {
+            cat "$notes"
+            echo
+            echo "---"
+            echo
+            echo "**Datei:** \`LayerNX-v$VERSION.apk\` · SHA-256: \`$(cut -d' ' -f1 "dist/LayerNX-v$VERSION.apk.sha256")\`"
+            echo
+            echo "**Signaturzertifikat (SHA-256):** \`$CERT_SHA256\`"
+            if [ "$SIGNING_MODE" = "one-off" ]; then
+              echo
+              echo "> Diese Version wurde mit einem einmaligen Schlüssel signiert. Spätere Versionen mit dem dauerhaften Release-Schlüssel erfordern einmalig eine Neuinstallation (Einstellungen von LayerNX gehen dabei verloren)."
+            fi
+          } > "$RUNNER_TEMP/notes.md"
+          gh release create "$GITHUB_REF_NAME" \
+            --title "LayerNX $VERSION" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --verify-tag \
+            "dist/LayerNX-v$VERSION.apk" \
+            "dist/LayerNX-v$VERSION.apk.sha256"

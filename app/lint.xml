@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- accessibilityHeading is simply ignored below API 28; no fallback needed. -->
+    <issue id="UnusedAttribute">
+        <ignore regexp="accessibilityHeading" />
+    </issue>
+</lint>

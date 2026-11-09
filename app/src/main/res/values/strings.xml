@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">LayerNX</string>
+    <string name="brand_layer" translatable="false">Layer</string>
+    <string name="brand_nx" translatable="false">NX</string>
+    <string name="lnx_dot" translatable="false">●</string>
+
+    <!-- Home -->
+    <string name="greeting_anonymous">Hallo.</string>
+    <string name="greeting_named">Hallo, %1$s.</string>
+    <string name="customize">Anpassen</string>
+    <string name="all_apps">Alle Apps</string>
+    <string name="softkey_apps">Apps</string>
+    <string name="softkey_ok">Alle Apps öffnen</string>
+    <string name="set_default_banner">Als Standard-Launcher festlegen</string>
+    <string name="no_app_for_role">Keine App für „%1$s“ gefunden. Bitte wähle eine aus.</string>
+    <string name="launch_failed">„%1$s“ konnte nicht geöffnet werden.</string>
+    <string name="settings_unavailable">Diese Einstellung ist auf diesem Gerät nicht verfügbar.</string>
+
+    <!-- Roles -->
+    <string name="role_phone">Telefon</string>
+    <string name="role_messages">Nachrichten</string>
+    <string name="role_camera">Kamera</string>
+    <string name="role_contacts">Kontakte</string>
+    <string name="role_browser">Browser</string>
+    <string name="role_gallery">Galerie</string>
+    <string name="role_music">Musik</string>
+    <string name="role_clock">Wecker</string>
+    <string name="role_calendar">Kalender</string>
+    <string name="role_calculator">Rechner</string>
+    <string name="role_settings">Einstellungen</string>
+
+    <!-- App list -->
+    <string name="apps_title">Deine Apps</string>
+    <plurals name="apps_count">
+        <item quantity="one">%d App</item>
+        <item quantity="other">%d Apps</item>
+    </plurals>
+    <string name="search_hint">Suchen – oder Ziffern tippen (T9)</string>
+    <string name="apps_loading">Apps werden geladen …</string>
+    <string name="apps_empty">Keine passende App gefunden.</string>
+    <string name="back">Zurück</string>
+    <string name="app_action_open">Öffnen</string>
+    <string name="app_action_set_default">Als Standard-App festlegen …</string>
+    <string name="app_action_info">App-Info</string>
+    <string name="app_action_hide">In „Alle Apps“ ausblenden</string>
+    <string name="app_hidden_toast">„%1$s“ ausgeblendet. Einblenden unter Anpassen → Ausgeblendete Apps.</string>
+    <string name="app_default_toast">„%1$s“ ist jetzt deine App für %2$s.</string>
+    <string name="choose_role_title">Standard-App für …</string>
+
+    <!-- Settings -->
+    <string name="settings_eyebrow">Dein Launcher</string>
+    <string name="settings_title">Mach’s zu deinem.</string>
+    <string name="settings_name">Dein Name (optional)</string>
+    <string name="settings_accent">Akzentfarbe</string>
+    <string name="section_dock">Startleiste</string>
+    <string name="dock_slot">Platz %1$d</string>
+    <string name="section_default_apps">Standard-Apps</string>
+    <string name="default_apps_explainer">LayerNX öffnet für jede Aufgabe die App, die du hier wählst. Ohne Auswahl werden Android-Standard-Apps und von dir installierte Apps den Emporia-Apps vorgezogen.</string>
+    <string name="role_auto">Automatisch</string>
+    <string name="role_auto_subtitle">Empfohlen · gerade: %1$s</string>
+    <string name="role_auto_none">Empfohlen · keine passende App installiert</string>
+    <string name="role_value_auto">%1$s · automatisch</string>
+    <string name="role_value_none">Keine App gefunden – tippen zum Auswählen</string>
+    <string name="role_other_app">Andere App wählen …</string>
+    <string name="role_other_app_subtitle">Aus allen installierten Apps</string>
+    <string name="tag_emporia">Emporia</string>
+    <string name="tag_installed">installiert</string>
+    <string name="tag_system">System</string>
+    <string name="avoid_oem_title">Emporia-Apps meiden</string>
+    <string name="avoid_oem_subtitle">Bei „Automatisch“ Standard- oder installierte Apps bevorzugen</string>
+    <string name="hide_oem_title">Emporia-Apps in „Alle Apps“ ausblenden</string>
+    <string name="hide_oem_subtitle">Nur die Anzeige – die Apps bleiben installiert</string>
+    <string name="hidden_apps_title">Ausgeblendete Apps</string>
+    <string name="hidden_apps_none">Keine</string>
+    <plurals name="hidden_apps_count">
+        <item quantity="one">%d App ausgeblendet</item>
+        <item quantity="other">%d Apps ausgeblendet</item>
+    </plurals>
+    <string name="hidden_apps_picker_title">Zum Einblenden antippen</string>
+    <string name="section_system">System</string>
+    <string name="system_default_launcher">Als Standard-Launcher festlegen</string>
+    <string name="system_default_launcher_active">Aktiv · LayerNX ist dein Startbildschirm</string>
+    <string name="system_default_launcher_inactive">Noch nicht aktiv</string>
+    <string name="system_default_apps">Android-Standard-Apps</string>
+    <string name="system_default_apps_subtitle">Browser, Telefon, SMS systemweit festlegen</string>
+    <string name="system_settings">Android-Einstellungen</string>
+    <string name="system_rollback">Zurück zum Emporia-Launcher</string>
+    <string name="system_rollback_subtitle">Startbildschirm-App wechseln</string>
+    <string name="rollback_toast">Wähle unter „Startbildschirm-App“ den Emporia-Launcher (Simple Launcher).</string>
+    <string name="section_about">Über</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_authors">Moritz und Zen · LayerNX</string>
+    <string name="done">Fertig</string>
+
+    <!-- Accent colours -->
+    <string name="accent_violet">Violett</string>
+    <string name="accent_blue">Blau</string>
+    <string name="accent_green">Grün</string>
+    <string name="accent_red">Rot</string>
+    <string name="accent_pink">Pink</string>
+    <string name="accent_teal">Petrol</string>
+    <string name="accent_selected">%1$s, ausgewählt</string>
+    <string name="state_selected">ausgewählt</string>
+    <string name="toggle_on">An</string>
+    <string name="toggle_off">Aus</string>
+</resources>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generic LayerNX list row: icon · title/subtitle · trailing indicator. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:minHeight="56dp"
+    android:orientation="horizontal"
+    android:paddingStart="13dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="8dp">
+
+    <ImageView
+        android:id="@+id/row_icon"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:importantForAccessibility="no"
+        android:scaleType="fitCenter" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/row_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="@color/lnx_text"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/row_subtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="@color/lnx_muted"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/row_trailing"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="8dp"
+        android:importantForAccessibility="no" />
+</LinearLayout>

@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LayerNX "Zen" home screen, translated 1:1 from launcher-mockup.html. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/home_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:overScrollMode="never"
+    android:scrollbars="none">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+
+        <!-- Header: brand + customize -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/brand"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.18"
+                android:textColor="@color/lnx_muted"
+                android:textSize="11sp" />
+
+            <ImageButton
+                android:id="@+id/gear"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:contentDescription="@string/customize"
+                android:scaleType="center"
+                android:src="@drawable/ic_gear" />
+        </LinearLayout>
+
+        <!-- Shown only while LayerNX is not the default HOME app -->
+        <LinearLayout
+            android:id="@+id/default_banner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:minHeight="44dp"
+            android:orientation="horizontal"
+            android:paddingStart="14dp"
+            android:paddingEnd="10dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/default_banner_icon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_home" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:text="@string/set_default_banner"
+                android:textColor="@color/lnx_text"
+                android:textSize="13sp" />
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_chevron"
+                android:tint="@color/lnx_muted" />
+        </LinearLayout>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:minHeight="8dp" />
+
+        <!-- Clock block -->
+        <TextClock
+            android:id="@+id/clock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-light"
+            android:format12Hour="h:mm"
+            android:format24Hour="HH:mm"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:letterSpacing="-0.05"
+            android:maxLines="1"
+            android:textColor="@color/lnx_text" />
+
+        <TextClock
+            android:id="@+id/date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:textColor="@color/lnx_muted"
+            android:textSize="14sp" />
+
+        <View
+            android:id="@+id/accent_line"
+            android:layout_width="28dp"
+            android:layout_height="3dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="20dp" />
+
+        <TextView
+            android:id="@+id/greeting"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:maxLines="2"
+            android:textColor="@color/lnx_text"
+            android:textSize="18sp" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:minHeight="16dp" />
+
+        <!-- Dock: three configurable role slots -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <include
+                android:id="@+id/dock_0"
+                layout="@layout/view_dock_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <include
+                android:id="@+id/dock_1"
+                layout="@layout/view_dock_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1" />
+
+            <include
+                android:id="@+id/dock_2"
+                layout="@layout/view_dock_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <!-- All apps -->
+        <LinearLayout
+            android:id="@+id/all_apps"
+            android:layout_width="match_parent"
+            tools:ignore="UseCompoundDrawables"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:minHeight="52dp"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_apps" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:text="@string/all_apps"
+                android:textColor="@color/lnx_text"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <!-- Soft-key hints (also touch targets) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/softkey_left"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:gravity="center_vertical|start"
+                android:minHeight="44dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:text="@string/role_phone"
+                android:textColor="@color/lnx_muted"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/softkey_center"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:contentDescription="@string/softkey_ok"
+                android:focusable="true"
+                android:gravity="center"
+                android:minWidth="44dp"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:text="@string/lnx_dot"
+                android:textColor="@color/lnx_muted"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/softkey_right"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:gravity="center_vertical|end"
+                android:minHeight="44dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:text="@string/softkey_apps"
+                android:textColor="@color/lnx_muted"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

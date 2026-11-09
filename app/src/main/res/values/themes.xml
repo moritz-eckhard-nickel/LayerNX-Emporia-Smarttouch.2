@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.LayerNX" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/lnx_bg</item>
+        <item name="android:colorBackground">@color/lnx_bg</item>
+        <item name="android:colorPrimary">@color/lnx_accent</item>
+        <item name="android:colorPrimaryDark">@color/lnx_bg</item>
+        <item name="android:colorAccent">@color/lnx_accent</item>
+        <item name="android:textColorPrimary">@color/lnx_text</item>
+        <item name="android:textColorSecondary">@color/lnx_muted</item>
+        <item name="android:textColorHint">@color/lnx_muted</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/lnx_bg</item>
+        <item name="android:windowShowWallpaper">false</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <!-- Full-screen "shade" used by pickers; mirrors .shade from the LayerNX mockup. -->
+    <style name="Theme.LayerNX.Shade" parent="Theme.LayerNX">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+
+    <style name="LayerNX.Eyebrow" parent="android:TextAppearance">
+        <item name="android:textColor">@color/lnx_muted</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:letterSpacing">0.14</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="LayerNX.Headline" parent="android:TextAppearance">
+        <item name="android:textColor">@color/lnx_text</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+
+    <style name="LayerNX.Label" parent="android:TextAppearance">
+        <item name="android:textColor">@color/lnx_muted</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+</resources>
