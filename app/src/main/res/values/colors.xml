@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- LayerNX design tokens (see docs/DESIGN.md). Runtime accent is applied in code. -->
+    <color name="lnx_bg">#FF0C0D10</color>
+    <color name="lnx_text">#FFF8F8FC</color>
+    <color name="lnx_muted">#FFA0A3B1</color>
+    <color name="lnx_accent">#FF552FFB</color>
+</resources>

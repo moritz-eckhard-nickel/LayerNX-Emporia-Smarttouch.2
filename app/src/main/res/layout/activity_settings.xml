@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/settings_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:scrollbarStyle="outsideOverlay">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:focusableInTouchMode="true"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="@string/settings_eyebrow"
+            android:textAppearance="@style/LayerNX.Eyebrow" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:accessibilityHeading="true"
+            android:text="@string/settings_title"
+            android:textAppearance="@style/LayerNX.Headline" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:labelFor="@+id/name"
+            android:text="@string/settings_name"
+            android:textAppearance="@style/LayerNX.Label" />
+
+        <EditText
+            android:id="@+id/name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:autofillHints="name"
+            android:imeOptions="actionDone|flagNoExtractUi"
+            android:inputType="textPersonName|textCapWords"
+            android:maxLength="18"
+            android:maxLines="1"
+            android:minHeight="44dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:textColor="@color/lnx_text"
+            android:textColorHint="@color/lnx_muted"
+            android:textSize="15sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/settings_accent"
+            android:textAppearance="@style/LayerNX.Label" />
+
+        <LinearLayout
+            android:id="@+id/swatches"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:layout_marginBottom="10dp"
+            android:accessibilityHeading="true"
+            android:text="@string/section_dock"
+            android:textAppearance="@style/LayerNX.Eyebrow" />
+
+        <LinearLayout
+            android:id="@+id/dock_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:accessibilityHeading="true"
+            android:text="@string/section_default_apps"
+            android:textAppearance="@style/LayerNX.Eyebrow" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="12dp"
+            android:lineSpacingMultiplier="1.25"
+            android:text="@string/default_apps_explainer"
+            android:textColor="@color/lnx_muted"
+            android:textSize="12sp" />
+
+        <LinearLayout
+            android:id="@+id/roles_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:layout_marginBottom="10dp"
+            android:accessibilityHeading="true"
+            android:text="@string/section_system"
+            android:textAppearance="@style/LayerNX.Eyebrow" />
+
+        <LinearLayout
+            android:id="@+id/system_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:layout_marginBottom="10dp"
+            android:accessibilityHeading="true"
+            android:text="@string/section_about"
+            android:textAppearance="@style/LayerNX.Eyebrow" />
+
+        <LinearLayout
+            android:id="@+id/about_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <Button
+            android:id="@+id/done"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:minHeight="48dp"
+            android:stateListAnimator="@null"
+            android:text="@string/done"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFFFF"
+            android:textSize="15sp" />
+    </LinearLayout>
+</ScrollView>
