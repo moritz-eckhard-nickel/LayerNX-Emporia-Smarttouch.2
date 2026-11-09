@@ -2,11 +2,12 @@
 
 Ein schlanker, tastenfreundlicher Startbildschirm für das **Emporia TOUCHsmart.2 (V188.2, Android 11)** – im LayerNX-Design aus [`launcher-mockup.html`](launcher-mockup.html).
 
-LayerNX ersetzt nur die Oberfläche. Firmware, Telefonie, Notruf, VoLTE und alle System-Apps bleiben unangetastet: kein Root, keine Berechtigungen, keine Änderungen am System.
+LayerNX ersetzt nur die Oberfläche. Firmware, Telefonie, Notruf, VoLTE und alle System-Apps bleiben unangetastet: kein Root, keine Änderungen am System. Benötigt werden nur zwei unkritische Berechtigungen (Hintergrund-Apps beenden, „Bitte nicht stören“ für den Stumm-Modus) und – nur für die Benachrichtigungsliste – der Benachrichtigungszugriff, den du selbst erlaubst.
 
 ## Funktionen
 
 - **Zen-Startbildschirm** wie im Mockup: große Uhr, Datum, Begrüßung mit deinem Namen, Startleiste mit drei frei belegbaren Plätzen, „Alle Apps“.
+- **Buttons oben rechts:** ⓘ Benachrichtigungen (mit Zähler, öffnen und löschen – das Emporia hat sonst keine Benachrichtigungsleiste) · **!** Hintergrund-Apps schließen und RAM freigeben · 🔔 Klingelton Ton → Vibration → Stumm · ⚙ Anpassen.
 - **Standard-Apps statt Emporia-Apps:** Für Telefon, Nachrichten, Kamera, Kontakte, Browser, Galerie, Musik, Wecker, Kalender, Rechner und Einstellungen wählt LayerNX automatisch die beste App – zuerst deine systemweite Standard-App, dann von dir installierte Apps (z. B. Firefox, Open Camera, Simple Gallery), dann Android-Standard-Apps (AOSP-Telefon, MediaTek-Kamera). Emporia-Apps werden nur genutzt, wenn es sonst keine gibt. **„Nachrichten“ öffnet WhatsApp**, sobald es installiert ist.
 - **Standard-Apps einstellbar:** Unter *Anpassen → Standard-Apps* lässt sich für jede Aufgabe eine beliebige App festlegen – oder lang auf eine App in „Alle Apps“ drücken → „Als Standard-App festlegen …“.
 - **Tastatur zuerst:** Alles ist ohne Touchscreen bedienbar, mit gut sichtbarem Fokusrahmen.
@@ -16,6 +17,7 @@ LayerNX ersetzt nur die Oberfläche. Firmware, Telefonie, Notruf, VoLTE und alle
 - **Emporia-Apps ausblenden** (optional, nur Anzeige) und einzelne Apps ausblenden.
 - **Akzentfarben** (6 Presets, alle mit WCAG-AA-Kontrast). Oberfläche und Datum sind immer auf Deutsch, unabhängig von der Systemsprache.
 - **Sparsam:** ~110 KB APK, keine Bibliotheken außer Kotlin, kein Polling, Icons werden im Hintergrund geladen und klein zwischengespeichert.
+- **Updates behalten deine Einstellungen:** Ab 0.0.4 einfach die neue APK drüber installieren.
 
 ## Installation
 

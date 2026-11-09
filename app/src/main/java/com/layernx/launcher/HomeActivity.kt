@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.ColorStateList
 import android.graphics.Typeface
+import android.media.AudioManager
 import android.os.Bundle
 import android.text.SpannableStringBuilder
 import android.text.Spanned
@@ -25,10 +26,17 @@ import android.widget.Toast
 import com.layernx.launcher.core.Accent
 import com.layernx.launcher.core.AppRole
 import com.layernx.launcher.data.AppRepository
+import com.layernx.launcher.data.NotificationStore
 import com.layernx.launcher.data.Prefs
+import com.layernx.launcher.system.BackgroundApps
 import com.layernx.launcher.system.Launcher
+import com.layernx.launcher.system.NotificationAccess
+import com.layernx.launcher.system.NotificationsService
+import com.layernx.launcher.system.Ringer
 import com.layernx.launcher.system.SystemActions
 import com.layernx.launcher.ui.Palette
+import com.layernx.launcher.ui.Picker
+import com.layernx.launcher.ui.PickerItem
 import com.layernx.launcher.ui.RolePickers
 import com.layernx.launcher.ui.Surfaces
 import com.layernx.launcher.ui.SystemBars
@@ -47,6 +55,9 @@ import java.util.Locale
  * - Envelope key → messages app (WhatsApp when installed)
  * - Menu key     → customize
  * - D-pad / OK   → move between and open the visible buttons
+ *
+ * Header (right to left): ⚙ customize · 🔔 ringer (Ton → Vibration → Stumm) ·
+ * ! close background apps · ⓘ notifications. "LAYERNX" hides itself when space runs out.
  */
 class HomeActivity : Activity() {
 
@@ -56,6 +67,10 @@ class HomeActivity : Activity() {
     private lateinit var root: ScrollView
     private lateinit var brand: TextView
     private lateinit var gear: ImageButton
+    private lateinit var ringer: ImageButton
+    private lateinit var closeApps: ImageButton
+    private lateinit var notifications: ImageButton
+    private lateinit var badge: TextView
     private lateinit var banner: LinearLayout
     private lateinit var clock: TextClock
     private lateinit var date: TextView
@@ -63,10 +78,14 @@ class HomeActivity : Activity() {
     private lateinit var allApps: LinearLayout
     private lateinit var dock: List<LinearLayout>
 
-    /** Keeps the German date correct across midnight, manual time changes and time zones. */
-    private val dateReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) = updateDate()
+    /** Date across midnight / time changes, and the bell when the ringer is changed elsewhere. */
+    private val systemReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == AudioManager.RINGER_MODE_CHANGED_ACTION) updateRinger() else updateDate()
+        }
     }
+
+    private val notificationsListener = NotificationStore.Listener { updateBadge() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,6 +97,10 @@ class HomeActivity : Activity() {
         root = findViewById(R.id.home_root)
         brand = findViewById(R.id.brand)
         gear = findViewById(R.id.gear)
+        ringer = findViewById(R.id.ringer)
+        closeApps = findViewById(R.id.close_apps)
+        notifications = findViewById(R.id.notifications)
+        badge = findViewById(R.id.notifications_badge)
         banner = findViewById(R.id.default_banner)
         clock = findViewById(R.id.clock)
         date = findViewById(R.id.date)
@@ -91,6 +114,10 @@ class HomeActivity : Activity() {
         brand.text = brandText()
 
         gear.setOnClickListener { openSettings() }
+        ringer.setOnClickListener { cycleRinger() }
+        closeApps.setOnClickListener { closeBackgroundApps() }
+        notifications.setOnClickListener { showNotifications() }
+        findViewById<View>(R.id.header).addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> fitBrand() }
         banner.setOnClickListener { SystemActions.requestDefaultLauncher(this) }
         allApps.setOnClickListener { openApps() }
         dock.forEachIndexed { slot, button ->
@@ -106,23 +133,30 @@ class HomeActivity : Activity() {
             addAction(Intent.ACTION_DATE_CHANGED)
             addAction(Intent.ACTION_TIME_CHANGED)
             addAction(Intent.ACTION_TIMEZONE_CHANGED)
+            addAction(AudioManager.RINGER_MODE_CHANGED_ACTION)
         }
+        // Protected system broadcasts only, so the receiver need not be exported.
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(dateReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            registerReceiver(systemReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
-            registerReceiver(dateReceiver, filter)
+            registerReceiver(systemReceiver, filter)
         }
+        NotificationStore.addListener(notificationsListener)
         updateDate()
+        updateRinger()
+        updateBadge()
     }
 
     override fun onStop() {
-        unregisterReceiver(dateReceiver)
+        unregisterReceiver(systemReceiver)
+        NotificationStore.removeListener(notificationsListener)
         super.onStop()
     }
 
     override fun onResume() {
         super.onResume()
         AppRepository.refreshIfStale()
+        NotificationAccess.reconnectIfNeeded(this)
         render()
     }
 
@@ -150,8 +184,13 @@ class HomeActivity : Activity() {
         val accentTint = ColorStateList.valueOf(Accent.lighten(accent, 0.6f))
 
         root.background = Surfaces.zenBackground(accent)
-        gear.background = Surfaces.interactive(this, 22f, oval = true) { Surfaces.oval(Palette.PANEL) }
-        gear.imageTintList = ColorStateList.valueOf(Palette.TEXT)
+        listOf(notifications, closeApps, ringer, gear).forEach { button ->
+            button.background = Surfaces.interactive(this, 22f, oval = true) { Surfaces.oval(Palette.PANEL) }
+            button.imageTintList = ColorStateList.valueOf(Palette.TEXT)
+        }
+        badge.background = Surfaces.rounded(this, accent, 8f)
+        updateRinger()
+        updateBadge()
 
         val isDefault = SystemActions.isDefaultLauncher(this)
         banner.visibility = if (isDefault) View.GONE else View.VISIBLE
@@ -194,6 +233,108 @@ class HomeActivity : Activity() {
             setSpan(StyleSpan(Typeface.BOLD), start, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
     }
+
+    /** Hides "LAYERNX" when the header buttons leave it too little room (small screen, big font). */
+    private fun fitBrand() {
+        val available = brand.width - brand.paddingLeft - brand.paddingRight
+        if (available <= 0) return
+        val fits = brand.paint.measureText(brand.text.toString()) <= available
+        val wanted = if (fits) View.VISIBLE else View.INVISIBLE
+        if (brand.visibility != wanted) brand.visibility = wanted
+    }
+
+    private fun updateRinger() {
+        val state = Ringer.current(this)
+        ringer.setImageResource(state.iconRes)
+        ringer.contentDescription = getString(state.labelRes)
+    }
+
+    private fun cycleRinger() {
+        when (val result = Ringer.cycle(this)) {
+            is Ringer.Result.Changed -> {
+                updateRinger()
+                Toast.makeText(this, result.state.toastRes, Toast.LENGTH_SHORT).show()
+            }
+            Ringer.Result.NeedsDndAccess -> {
+                Toast.makeText(this, R.string.ringer_needs_access, Toast.LENGTH_LONG).show()
+                NotificationAccess.openDndAccessSettings(this)
+            }
+            Ringer.Result.Unavailable -> Toast.makeText(this, R.string.settings_unavailable, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun closeBackgroundApps() {
+        if (!closeApps.isEnabled) return
+        closeApps.isEnabled = false
+        Toast.makeText(this, R.string.close_apps_running, Toast.LENGTH_SHORT).show()
+        val packages = AppRepository.apps.map { it.packageName }
+        BackgroundApps.closeAll(this, packages) { freeMb ->
+            closeApps.isEnabled = true
+            if (!isDestroyed) {
+                Toast.makeText(this, getString(R.string.close_apps_done, freeMb.toInt()), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun updateBadge() {
+        val count = if (NotificationStore.isConnected) NotificationStore.items.size else 0
+        badge.visibility = if (count > 0) View.VISIBLE else View.GONE
+        badge.text = if (count > 99) "99+" else count.toString()
+        notifications.contentDescription = if (count > 0) {
+            getString(R.string.notifications_show) + ", " +
+                resources.getQuantityString(R.plurals.notifications_count, count, count)
+        } else {
+            getString(R.string.notifications_show)
+        }
+    }
+
+    private fun showNotifications() {
+        val accent = prefs.accent
+        val title = getString(R.string.notifications_title)
+        if (!NotificationAccess.isGranted(this)) {
+            Picker.show(
+                this, accent, null, title,
+                listOf(
+                    PickerItem(
+                        title = getString(R.string.notifications_access_title),
+                        subtitle = getString(R.string.notifications_access_subtitle),
+                        icon = getDrawable(R.drawable.ic_info),
+                        showChevron = true,
+                    ) { NotificationAccess.openListenerSettings(this) },
+                ),
+            )
+            return
+        }
+        val timeFormat = android.text.format.DateFormat.getTimeFormat(this)
+        val items = NotificationStore.items.map { item ->
+            val app = AppRepository.findByPackage(item.packageName)
+            val appLabel = app?.label ?: item.packageName
+            val details = buildList {
+                add(appLabel)
+                add(timeFormat.format(Date(item.postTime)))
+                item.text?.toString()?.takeIf { it.isNotBlank() }?.let { add(it) }
+            }.joinToString(" · ")
+            PickerItem(
+                title = item.title?.toString()?.takeIf { it.isNotBlank() } ?: appLabel,
+                subtitle = details,
+                app = app,
+                icon = if (app == null) notificationIcon(item) else null,
+            ) { NotificationAccess.open(this, launcher, item) }
+        }
+        val clearable = NotificationStore.items.any { it.isClearable }
+        Picker.show(
+            this, accent, null, title, items,
+            emptyText = getString(R.string.notifications_empty),
+            secondaryLabel = if (clearable) getString(R.string.notifications_clear_all) else null,
+            onSecondary = if (clearable) ({ NotificationsService.dismissAll() }) else null,
+        )
+    }
+
+    private fun notificationIcon(item: NotificationStore.Item): android.graphics.drawable.Drawable? = try {
+        item.smallIcon?.loadDrawable(this)
+    } catch (e: RuntimeException) {
+        null
+    } ?: getDrawable(R.drawable.ic_info)
 
     /** "Montag, 9. November" – always German, like the rest of the launcher. */
     private fun updateDate() {

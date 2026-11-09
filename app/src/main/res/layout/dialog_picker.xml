@@ -23,6 +23,16 @@
         android:accessibilityHeading="true"
         android:textAppearance="@style/LayerNX.Headline" />
 
+    <TextView
+        android:id="@+id/picker_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:gravity="center"
+        android:textColor="@color/lnx_muted"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
     <ListView
         android:id="@+id/picker_list"
         android:layout_width="match_parent"
@@ -33,6 +43,18 @@
         android:dividerHeight="8dp"
         android:listSelector="@android:color/transparent"
         android:paddingBottom="8dp" />
+
+    <Button
+        android:id="@+id/picker_secondary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:minHeight="48dp"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:textColor="@color/lnx_text"
+        android:textSize="15sp"
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/picker_close"

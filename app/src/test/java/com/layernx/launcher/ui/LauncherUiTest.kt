@@ -83,6 +83,115 @@ class LauncherUiTest {
     }
 
     @Test
+    fun bellCyclesRingerAndAsksForDndAccessForSilent() {
+        val audio = context.getSystemService(android.media.AudioManager::class.java)
+        val notificationManager = context.getSystemService(android.app.NotificationManager::class.java)
+        audio.ringerMode = android.media.AudioManager.RINGER_MODE_NORMAL
+        shadowOf(notificationManager).setNotificationPolicyAccessGranted(false)
+
+        val activity = Robolectric.buildActivity(HomeActivity::class.java).setup().visible().get()
+        val bell = activity.findViewById<android.widget.ImageButton>(R.id.ringer)
+        assertEquals("Klingelton: Ton", bell.contentDescription)
+
+        bell.performClick()
+        assertEquals(android.media.AudioManager.RINGER_MODE_VIBRATE, audio.ringerMode)
+        assertEquals("Klingelton: Vibration", bell.contentDescription)
+
+        // "Stumm" without DND access: ringer unchanged, the access screen opens.
+        bell.performClick()
+        assertEquals(android.media.AudioManager.RINGER_MODE_VIBRATE, audio.ringerMode)
+        assertEquals(
+            android.provider.Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS,
+            shadowOf(activity).nextStartedActivity.action,
+        )
+
+        shadowOf(notificationManager).setNotificationPolicyAccessGranted(true)
+        bell.performClick()
+        assertEquals(android.media.AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+        assertEquals("Klingelton: Stumm", bell.contentDescription)
+        FakeDevice.screenshot(activity.window.decorView, "home_silent")
+
+        bell.performClick()
+        assertEquals(android.media.AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+    }
+
+    @Test
+    fun notificationsButtonAsksForAccessFirst() {
+        val activity = Robolectric.buildActivity(HomeActivity::class.java).setup().visible().get()
+        activity.findViewById<View>(R.id.notifications).performClick()
+        val dialog = org.robolectric.shadows.ShadowDialog.getLatestDialog()
+        val list = dialog.findViewById<ListView>(R.id.picker_list)
+        assertEquals("Zugriff erlauben", (list.adapter.getItem(0) as PickerItem).title.toString())
+        shadowOf(list).performItemClick(0)
+        val started = shadowOf(activity).nextStartedActivity
+        assertEquals(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS, started.action)
+        assertEquals(
+            com.layernx.launcher.system.NotificationAccess.component(activity).flattenToString(),
+            started.getStringExtra(android.provider.Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME),
+        )
+    }
+
+    @Test
+    fun notificationsShowWithBadgeAndList() {
+        val component = com.layernx.launcher.system.NotificationAccess.component(context)
+        shadowOf(context.getSystemService(android.app.NotificationManager::class.java))
+            .setNotificationListenerAccessGranted(component, true)
+        fun sbn(id: Int, pkg: String, title: String, text: String, time: Long): android.service.notification.StatusBarNotification {
+            val n = android.app.Notification.Builder(context, "test")
+                .setSmallIcon(R.drawable.ic_messages)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setAutoCancel(true)
+                .build()
+            @Suppress("DEPRECATION")
+            return android.service.notification.StatusBarNotification(
+                pkg, pkg, id, null, 10_000 + id, 0, 0, n, android.os.Process.myUserHandle(), time,
+            )
+        }
+        com.layernx.launcher.data.NotificationStore.update(
+            listOf(
+                sbn(1, "com.whatsapp", "Mama", "Ruf mich bitte an", 1_000),
+                sbn(2, "org.telegram.messenger", "Zen", "Neues Build ist fertig", 2_000),
+            ),
+            connected = true,
+            ownPackage = context.packageName,
+        )
+
+        val activity = Robolectric.buildActivity(HomeActivity::class.java).setup().visible().get()
+        FakeDevice.settle()
+        val badge = activity.findViewById<TextView>(R.id.notifications_badge)
+        assertEquals(View.VISIBLE, badge.visibility)
+        assertEquals("2", badge.text.toString())
+        FakeDevice.screenshot(activity.window.decorView, "home_notifications_badge")
+
+        activity.findViewById<View>(R.id.notifications).performClick()
+        FakeDevice.settle()
+        val dialog = org.robolectric.shadows.ShadowDialog.getLatestDialog()
+        val list = dialog.findViewById<ListView>(R.id.picker_list)
+        val titles = (0 until list.adapter.count).map { (list.adapter.getItem(it) as PickerItem).title.toString() }
+        assertEquals(listOf("Zen", "Mama"), titles)
+        assertEquals(View.VISIBLE, dialog.findViewById<View>(R.id.picker_secondary).visibility)
+        FakeDevice.screenshot(dialog.window!!.decorView, "notifications")
+
+        com.layernx.launcher.data.NotificationStore.update(emptyList(), connected = false, ownPackage = context.packageName)
+    }
+
+    @Test
+    fun headerHasAllButtonsAndBrandNeverClips() {
+        RuntimeEnvironment.setFontScale(1.3f)
+        val activity = Robolectric.buildActivity(HomeActivity::class.java).setup().visible().get()
+        FakeDevice.settle()
+        listOf(R.id.notifications, R.id.close_apps, R.id.ringer, R.id.gear).forEach {
+            assertEquals(View.VISIBLE, activity.findViewById<View>(it).visibility)
+        }
+        val brand = activity.findViewById<TextView>(R.id.brand)
+        if (brand.visibility == View.VISIBLE) {
+            assertTrue(brand.paint.measureText(brand.text.toString()) <= brand.width)
+        }
+        FakeDevice.screenshot(activity.window.decorView, "home_header_fontscale_130")
+    }
+
+    @Test
     fun homeScreenSurvivesLargeFontScale() {
         RuntimeEnvironment.setFontScale(1.3f)
         Prefs(context).userName = "Moritz"

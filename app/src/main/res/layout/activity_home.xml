@@ -16,8 +16,9 @@
         android:paddingStart="16dp"
         android:paddingEnd="16dp">
 
-        <!-- Header: brand + customize -->
+        <!-- Header: brand · notifications · close background apps · ringer · customize -->
         <LinearLayout
+            android:id="@+id/header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -31,13 +32,62 @@
                 android:layout_weight="1"
                 android:fontFamily="sans-serif-medium"
                 android:letterSpacing="0.18"
+                android:maxLines="1"
                 android:textColor="@color/lnx_muted"
                 android:textSize="11sp" />
+
+            <FrameLayout
+                android:layout_width="44dp"
+                android:layout_height="44dp">
+
+                <ImageButton
+                    android:id="@+id/notifications"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/notifications_show"
+                    android:scaleType="center"
+                    android:src="@drawable/ic_info" />
+
+                <TextView
+                    android:id="@+id/notifications_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="16dp"
+                    android:layout_gravity="top|end"
+                    android:elevation="4dp"
+                    android:gravity="center"
+                    android:importantForAccessibility="no"
+                    android:minWidth="16dp"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:textColor="#FFFFFFFF"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <ImageButton
+                android:id="@+id/close_apps"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="6dp"
+                android:contentDescription="@string/close_apps"
+                android:scaleType="center"
+                android:src="@drawable/ic_alert" />
+
+            <ImageButton
+                android:id="@+id/ringer"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="6dp"
+                android:contentDescription="@string/ringer_sound"
+                android:scaleType="center"
+                android:src="@drawable/ic_bell" />
 
             <ImageButton
                 android:id="@+id/gear"
                 android:layout_width="44dp"
                 android:layout_height="44dp"
+                android:layout_marginStart="6dp"
                 android:contentDescription="@string/customize"
                 android:scaleType="center"
                 android:src="@drawable/ic_gear" />
