@@ -87,11 +87,21 @@
             android:layout_weight="1"
             android:minHeight="8dp" />
 
-        <!-- Clock block -->
+        <!-- Date directly above the clock, then the greeting -->
+        <TextView
+            android:id="@+id/date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:maxLines="1"
+            android:textColor="@color/lnx_muted"
+            android:textSize="15sp" />
+
         <TextClock
             android:id="@+id/clock"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:fontFamily="sans-serif-light"
             android:format12Hour="h:mm"
             android:format24Hour="HH:mm"
@@ -102,33 +112,17 @@
             android:textColor="@color/lnx_text" />
 
         <TextView
-            android:id="@+id/date"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="center"
-            android:maxLines="1"
-            android:textColor="@color/lnx_muted"
-            android:textSize="14sp" />
-
-        <View
-            android:id="@+id/accent_line"
-            android:layout_width="28dp"
-            android:layout_height="3dp"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="20dp" />
-
-        <TextView
             android:id="@+id/greeting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
+            android:layout_marginTop="20dp"
             android:ellipsize="end"
             android:fontFamily="sans-serif-medium"
             android:gravity="center"
             android:maxLines="2"
+            android:letterSpacing="-0.01"
             android:textColor="@color/lnx_text"
-            android:textSize="18sp" />
+            android:textSize="26sp" />
 
         <Space
             android:layout_width="match_parent"

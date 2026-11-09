@@ -72,6 +72,17 @@ class LauncherUiTest {
     }
 
     @Test
+    fun longestNameStillFitsOnScreen() {
+        Prefs(context).userName = "Maximilian-Alexand" // 18 characters = the input limit
+        val activity = Robolectric.buildActivity(HomeActivity::class.java).setup().visible().get()
+        FakeDevice.settle()
+        val root = activity.findViewById<ScrollView>(R.id.home_root)
+        val content = root.getChildAt(0)
+        assertTrue("Home content ${content.height}px exceeds ${root.height}px", content.height <= root.height)
+        FakeDevice.screenshot(activity.window.decorView, "home_long_name")
+    }
+
+    @Test
     fun homeScreenSurvivesLargeFontScale() {
         RuntimeEnvironment.setFontScale(1.3f)
         Prefs(context).userName = "Moritz"

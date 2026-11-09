@@ -59,7 +59,6 @@ class HomeActivity : Activity() {
     private lateinit var banner: LinearLayout
     private lateinit var clock: TextClock
     private lateinit var date: TextView
-    private lateinit var accentLine: View
     private lateinit var greeting: TextView
     private lateinit var allApps: LinearLayout
     private lateinit var dock: List<LinearLayout>
@@ -82,7 +81,6 @@ class HomeActivity : Activity() {
         banner = findViewById(R.id.default_banner)
         clock = findViewById(R.id.clock)
         date = findViewById(R.id.date)
-        accentLine = findViewById(R.id.accent_line)
         greeting = findViewById(R.id.greeting)
         allApps = findViewById(R.id.all_apps)
         dock = listOf(findViewById(R.id.dock_0), findViewById(R.id.dock_1), findViewById(R.id.dock_2))
@@ -163,8 +161,6 @@ class HomeActivity : Activity() {
         findViewById<ImageView>(R.id.default_banner_icon).imageTintList = accentTint
 
         updateDate()
-
-        accentLine.background = Surfaces.rounded(this, accent, 2f)
 
         val name = prefs.userName
         greeting.text = if (name.isBlank()) getString(R.string.greeting_anonymous) else getString(R.string.greeting_named, name)
