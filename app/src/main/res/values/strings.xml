@@ -8,6 +8,30 @@
     <string name="greeting_anonymous">Hallo.</string>
     <string name="greeting_named">Hallo, %1$s.</string>
     <string name="customize">Anpassen</string>
+
+    <!-- Header: notifications, background apps, ringer -->
+    <string name="notifications_show">Benachrichtigungen anzeigen</string>
+    <string name="notifications_title">Benachrichtigungen</string>
+    <string name="notifications_empty">Keine neuen Benachrichtigungen.</string>
+    <string name="notifications_clear_all">Alle löschen</string>
+    <string name="notifications_access_title">Zugriff erlauben</string>
+    <string name="notifications_access_subtitle">Damit LayerNX deine Benachrichtigungen anzeigen kann, aktiviere LayerNX unter „Benachrichtigungszugriff“.</string>
+    <string name="notifications_service_label">LayerNX Benachrichtigungen</string>
+    <string name="notifications_open_failed">Diese Benachrichtigung lässt sich nicht öffnen.</string>
+    <plurals name="notifications_count">
+        <item quantity="one">%d Benachrichtigung</item>
+        <item quantity="other">%d Benachrichtigungen</item>
+    </plurals>
+    <string name="close_apps">Hintergrund-Apps schließen</string>
+    <string name="close_apps_running">Hintergrund-Apps werden geschlossen …</string>
+    <string name="close_apps_done">Hintergrund-Apps geschlossen · %1$d MB frei</string>
+    <string name="ringer_sound">Klingelton: Ton</string>
+    <string name="ringer_vibrate">Klingelton: Vibration</string>
+    <string name="ringer_silent">Klingelton: Stumm</string>
+    <string name="ringer_changed_sound">Ton an</string>
+    <string name="ringer_changed_vibrate">Vibration</string>
+    <string name="ringer_changed_silent">Stumm</string>
+    <string name="ringer_needs_access">Für „Stumm“ braucht LayerNX den Zugriff auf „Bitte nicht stören“. Bitte LayerNX dort erlauben und danach erneut tippen.</string>
     <string name="all_apps">Alle Apps</string>
     <string name="set_default_banner">Als Standard-Launcher festlegen</string>
     <string name="no_app_for_role">Keine App für „%1$s“ gefunden. Bitte wähle eine aus.</string>

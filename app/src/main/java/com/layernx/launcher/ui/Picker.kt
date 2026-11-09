@@ -40,6 +40,9 @@ object Picker {
         eyebrow: CharSequence?,
         title: CharSequence,
         items: List<PickerItem>,
+        emptyText: CharSequence? = null,
+        secondaryLabel: CharSequence? = null,
+        onSecondary: (() -> Unit)? = null,
     ): Dialog? {
         if (activity.isFinishing || activity.isDestroyed) return null
         val dialog = Dialog(activity, R.style.Theme_LayerNX_Shade)
@@ -64,6 +67,22 @@ object Picker {
         list.setOnItemClickListener { _, _, position, _ ->
             dialog.dismiss()
             items[position].onPick()
+        }
+
+        root.findViewById<TextView>(R.id.picker_empty).apply {
+            text = emptyText
+            visibility = if (items.isEmpty() && !emptyText.isNullOrEmpty()) View.VISIBLE else View.GONE
+        }
+        root.findViewById<Button>(R.id.picker_secondary).apply {
+            if (secondaryLabel != null && onSecondary != null) {
+                visibility = View.VISIBLE
+                text = secondaryLabel
+                background = Surfaces.outlinedButton(activity, 13f)
+                setOnClickListener {
+                    dialog.dismiss()
+                    onSecondary()
+                }
+            }
         }
 
         root.findViewById<Button>(R.id.picker_close).apply {
