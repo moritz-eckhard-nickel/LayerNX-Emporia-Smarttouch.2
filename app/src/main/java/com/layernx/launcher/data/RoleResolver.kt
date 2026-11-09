@@ -38,6 +38,15 @@ class RoleResolver(context: Context, private val prefs: Prefs) {
                 byPackage.putIfAbsent(pkg, activity.applicationInfo)
             }
         }
+        for (pkg in role.preferredPackages) {
+            if (pkg in byPackage) continue
+            val info = try {
+                applicationInfo(pkg)
+            } catch (e: PackageManager.NameNotFoundException) {
+                continue
+            }
+            if (info.enabled && pm.getLaunchIntentForPackage(pkg) != null) byPackage[pkg] = info
+        }
         return byPackage.map { (pkg, appInfo) ->
             RoleCandidate(
                 packageName = pkg,
@@ -54,8 +63,14 @@ class RoleResolver(context: Context, private val prefs: Prefs) {
         return resolved.takeUnless { it == ANDROID_PACKAGE || it == ownPackage }
     }
 
+    /** All apps that can be opened for [role], best first. Apps that cannot be opened are left out. */
     fun rankedCandidates(role: AppRole): List<RoleCandidate> =
-        RoleRanking.rank(candidates(role), systemDefault(role), prefs.avoidOemApps)
+        RoleRanking.rank(
+            candidates(role).filter { launchIntent(role, it.packageName) != null },
+            systemDefault(role),
+            prefs.avoidOemApps,
+            role.preferredPackages,
+        )
 
     fun automatic(role: AppRole): RoleCandidate? = rankedCandidates(role).firstOrNull()
 
@@ -70,50 +85,50 @@ class RoleResolver(context: Context, private val prefs: Prefs) {
     }
 
     /**
-     * Explicit intent that opens [packageName] for [role].
+     * Explicit intent that *opens* [packageName] for [role] – always its normal start screen.
      *
-     * Packages with several start-screen entries (e.g. "Telefon" and "Kontakte" in one OEM app)
-     * are resolved to the entry that actually serves the role.
+     * - One start-screen entry: that one.
+     * - Several (e.g. "Telefon" and "Kontakte" in one OEM app): the entry that serves the role,
+     *   otherwise the entry Android itself would open.
+     * - None: only the role's plain "open" action (no data) qualifies.
+     *
+     * Data-carrying probes such as SENDTO "smsto:" are never used to open an app: without a
+     * recipient, apps like WhatsApp close again immediately.
      */
     fun launchIntent(role: AppRole, packageName: String): Intent? {
+        // queryIntentActivities already omits components disabled at runtime. The manifest-level
+        // `enabled` flag must not be checked: apps such as WhatsApp enable their entry at runtime.
         val launchers = query(
             Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).setPackage(packageName),
-        ).mapNotNull { it.activityInfo }.filter { it.exported && it.enabled }
+        ).mapNotNull { it.activityInfo }.filter { it.exported }
 
-        val roleIntents = listOf(role.openIntent()) + role.probeIntents()
-        val roleComponents = roleIntents
-            .flatMap { query(Intent(it).setPackage(packageName)) }
-            .mapNotNull { it.activityInfo }
-            .map { it.packageName to it.name }
-            .toSet()
-
-        val launcher = when {
-            launchers.size == 1 -> launchers.single()
-            launchers.size > 1 -> launchers.firstOrNull { (it.packageName to it.name) in roleComponents }
-            else -> null
-        }
-        if (launcher != null) {
-            return Intent(Intent.ACTION_MAIN)
-                .addCategory(Intent.CATEGORY_LAUNCHER)
-                .setClassName(launcher.packageName, launcher.name)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-        }
-        roleIntents.forEach { candidate ->
-            val target = query(Intent(candidate).setPackage(packageName)).firstOrNull()?.activityInfo
-            if (target != null && target.exported) {
-                return Intent(candidate)
-                    .setClassName(target.packageName, target.name)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (launchers.size > 1) {
+            val roleComponents = (listOf(role.openIntent()) + role.probeIntents())
+                .flatMap { query(Intent(it).setPackage(packageName)) }
+                .mapNotNull { it.activityInfo }
+                .map { it.packageName to it.name }
+                .toSet()
+            launchers.firstOrNull { (it.packageName to it.name) in roleComponents }
+                ?.let { return mainIntent(it.packageName, it.name) }
+            pm.getLaunchIntentForPackage(packageName)?.let {
+                return it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
             }
         }
-        // Several start entries, none tied to the role: open the first one.
-        return launchers.firstOrNull()?.let {
-            Intent(Intent.ACTION_MAIN)
-                .addCategory(Intent.CATEGORY_LAUNCHER)
-                .setClassName(it.packageName, it.name)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+        launchers.firstOrNull()?.let { return mainIntent(it.packageName, it.name) }
+
+        val open = role.openIntent()
+        val target = query(Intent(open).setPackage(packageName)).firstOrNull()?.activityInfo
+        if (target != null && target.exported) {
+            return Intent(open).setClassName(target.packageName, target.name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
+        return null
     }
+
+    private fun mainIntent(packageName: String, className: String): Intent =
+        Intent(Intent.ACTION_MAIN)
+            .addCategory(Intent.CATEGORY_LAUNCHER)
+            .setClassName(packageName, className)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
 
     fun isLaunchable(packageName: String, role: AppRole): Boolean =
         isEnabled(packageName) && launchIntent(role, packageName) != null

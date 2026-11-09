@@ -3,15 +3,12 @@
     <string name="app_name" translatable="false">LayerNX</string>
     <string name="brand_layer" translatable="false">Layer</string>
     <string name="brand_nx" translatable="false">NX</string>
-    <string name="lnx_dot" translatable="false">●</string>
 
     <!-- Home -->
     <string name="greeting_anonymous">Hallo.</string>
     <string name="greeting_named">Hallo, %1$s.</string>
     <string name="customize">Anpassen</string>
     <string name="all_apps">Alle Apps</string>
-    <string name="softkey_apps">Apps</string>
-    <string name="softkey_ok">Alle Apps öffnen</string>
     <string name="set_default_banner">Als Standard-Launcher festlegen</string>
     <string name="no_app_for_role">Keine App für „%1$s“ gefunden. Bitte wähle eine aus.</string>
     <string name="launch_failed">„%1$s“ konnte nicht geöffnet werden.</string>

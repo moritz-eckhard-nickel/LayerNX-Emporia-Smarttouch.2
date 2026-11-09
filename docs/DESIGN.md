@@ -9,7 +9,7 @@ Quelle: [`launcher-mockup.html`](../launcher-mockup.html) (Layout „Zen“). Um
 | `bg` | `#0C0D10` | Hintergrund aller Screens |
 | `panel` | `#1A1C22` | Kacheln, Listenzeilen, Zahnrad |
 | `text` | `#F8F8FC` | Primärtext, Icons |
-| `muted` | `#A0A3B1` | Sekundärtext, Marke, Softkeys |
+| `muted` | `#A0A3B1` | Sekundärtext, Marke |
 | `border` | `#32323F` / `#292B33` | „Alle Apps“, Einstellungszeilen |
 | `input` | `#242630`, Rand `#414451` | Eingabefelder |
 | `accent` | `#552FFB` (Standard) | Primär-Kachel, Akzentlinie, Buttons, Glow |

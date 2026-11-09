@@ -1,13 +1,15 @@
 package com.layernx.launcher
 
 import android.app.Activity
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.SpannableStringBuilder
 import android.text.Spanned
-import android.text.format.DateFormat
 import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import android.util.TypedValue
@@ -31,6 +33,8 @@ import com.layernx.launcher.ui.RolePickers
 import com.layernx.launcher.ui.Surfaces
 import com.layernx.launcher.ui.SystemBars
 import com.layernx.launcher.ui.fitToWidth
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 /**
@@ -40,7 +44,7 @@ import java.util.Locale
  * - 0–9, *, #   → dialer with that digit typed (ACTION_DIAL – nothing is ever called automatically)
  * - Call key     → phone app
  * - Camera key   → chosen camera app (fixes the stock key opening only the Emporia camera)
- * - Envelope key → messages app
+ * - Envelope key → messages app (WhatsApp when installed)
  * - Menu key     → customize
  * - D-pad / OK   → move between and open the visible buttons
  */
@@ -54,14 +58,16 @@ class HomeActivity : Activity() {
     private lateinit var gear: ImageButton
     private lateinit var banner: LinearLayout
     private lateinit var clock: TextClock
-    private lateinit var date: TextClock
+    private lateinit var date: TextView
     private lateinit var accentLine: View
     private lateinit var greeting: TextView
     private lateinit var allApps: LinearLayout
     private lateinit var dock: List<LinearLayout>
-    private lateinit var softLeft: TextView
-    private lateinit var softCenter: TextView
-    private lateinit var softRight: TextView
+
+    /** Keeps the German date correct across midnight, manual time changes and time zones. */
+    private val dateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) = updateDate()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,9 +86,6 @@ class HomeActivity : Activity() {
         greeting = findViewById(R.id.greeting)
         allApps = findViewById(R.id.all_apps)
         dock = listOf(findViewById(R.id.dock_0), findViewById(R.id.dock_1), findViewById(R.id.dock_2))
-        softLeft = findViewById(R.id.softkey_left)
-        softCenter = findViewById(R.id.softkey_center)
-        softRight = findViewById(R.id.softkey_right)
 
         SystemBars.applyPadding(root)
         // Large numerals: sized in dp so a big system font scale cannot push the dock off screen.
@@ -92,14 +95,31 @@ class HomeActivity : Activity() {
         gear.setOnClickListener { openSettings() }
         banner.setOnClickListener { SystemActions.requestDefaultLauncher(this) }
         allApps.setOnClickListener { openApps() }
-        softLeft.setOnClickListener { v -> launchRole(AppRole.PHONE, v) }
-        softCenter.setOnClickListener { openApps() }
-        softRight.setOnClickListener { openApps() }
         dock.forEachIndexed { slot, button ->
             button.setOnClickListener { v -> launchRole(prefs.dockRole(slot), v) }
         }
         // Keypad users land on the primary dock button first.
         dock[0].isFocusedByDefault = true
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_DATE_CHANGED)
+            addAction(Intent.ACTION_TIME_CHANGED)
+            addAction(Intent.ACTION_TIMEZONE_CHANGED)
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(dateReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(dateReceiver, filter)
+        }
+        updateDate()
+    }
+
+    override fun onStop() {
+        unregisterReceiver(dateReceiver)
+        super.onStop()
     }
 
     override fun onResume() {
@@ -142,8 +162,7 @@ class HomeActivity : Activity() {
         }
         findViewById<ImageView>(R.id.default_banner_icon).imageTintList = accentTint
 
-        date.format12Hour = datePattern()
-        date.format24Hour = datePattern()
+        updateDate()
 
         accentLine.background = Surfaces.rounded(this, accent, 2f)
 
@@ -167,11 +186,6 @@ class HomeActivity : Activity() {
         }
 
         allApps.background = Surfaces.outlinedButton(this, 18f)
-        softLeft.background = Surfaces.interactive(this, 10f) { Surfaces.rounded(this, android.graphics.Color.TRANSPARENT, 10f) }
-        softRight.background = Surfaces.interactive(this, 10f) { Surfaces.rounded(this, android.graphics.Color.TRANSPARENT, 10f) }
-        softCenter.background = Surfaces.interactive(this, 7f) {
-            Surfaces.rounded(this, android.graphics.Color.TRANSPARENT, 7f, Palette.SOFTKEY_BORDER)
-        }
     }
 
     private fun brandText(): CharSequence {
@@ -185,14 +199,9 @@ class HomeActivity : Activity() {
         }
     }
 
-    /** "Montag, 9. November" / "Monday, November 9" – localised by ICU. */
-    private fun datePattern(): String {
-        val locale = Locale.getDefault()
-        val best = DateFormat.getBestDateTimePattern(locale, DATE_SKELETON)
-        if (best != DATE_SKELETON) return best
-        // Defensive: if the firmware's ICU data cannot expand the skeleton, use the full date.
-        return (java.text.DateFormat.getDateInstance(java.text.DateFormat.FULL, locale) as? java.text.SimpleDateFormat)
-            ?.toPattern() ?: "EEEE, d MMMM"
+    /** "Montag, 9. November" – always German, like the rest of the launcher. */
+    private fun updateDate() {
+        date.text = SimpleDateFormat(DATE_PATTERN, Locale.GERMAN).format(Date())
     }
 
     private fun launchRole(role: AppRole, source: View?) {
@@ -225,8 +234,6 @@ class HomeActivity : Activity() {
             KeyEvent.KEYCODE_ENVELOPE -> launchRole(AppRole.MESSAGES, null)
             KeyEvent.KEYCODE_EXPLORER -> launchRole(AppRole.BROWSER, null)
             KeyEvent.KEYCODE_MENU -> openSettings()
-            KeyEvent.KEYCODE_SOFT_LEFT -> launchRole(AppRole.PHONE, null)
-            KeyEvent.KEYCODE_SOFT_RIGHT -> openApps()
             // The home screen is the root: BACK has nowhere to go.
             KeyEvent.KEYCODE_BACK -> Unit
             else -> return super.onKeyDown(keyCode, event)
@@ -248,15 +255,13 @@ class HomeActivity : Activity() {
     }
 
     private companion object {
-        const val DATE_SKELETON = "EEEEdMMMM"
+        const val DATE_PATTERN = "EEEE, d. MMMM"
         val HANDLED_KEYS = setOf(
             KeyEvent.KEYCODE_CALL,
             KeyEvent.KEYCODE_CAMERA,
             KeyEvent.KEYCODE_ENVELOPE,
             KeyEvent.KEYCODE_EXPLORER,
             KeyEvent.KEYCODE_MENU,
-            KeyEvent.KEYCODE_SOFT_LEFT,
-            KeyEvent.KEYCODE_SOFT_RIGHT,
             KeyEvent.KEYCODE_BACK,
         )
     }

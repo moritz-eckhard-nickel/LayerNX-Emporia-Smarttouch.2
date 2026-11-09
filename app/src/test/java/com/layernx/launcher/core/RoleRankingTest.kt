@@ -68,6 +68,22 @@ class RoleRankingTest {
     }
 
     @Test
+    fun preferredAppBeatsEvenTheSystemDefault() {
+        val whatsapp = RoleCandidate("com.whatsapp", "WhatsApp", isSystemApp = false)
+        val emporiaSms = RoleCandidate("com.emporia.mms", "Nachrichten", isSystemApp = true)
+        val preferred = listOf("com.whatsapp", "com.whatsapp.w4b")
+        assertEquals(
+            whatsapp,
+            RoleRanking.choose(listOf(emporiaSms, whatsapp), "com.emporia.mms", avoidOem = false, preferredPackages = preferred),
+        )
+        // Without WhatsApp installed the normal order applies.
+        assertEquals(
+            emporiaSms,
+            RoleRanking.choose(listOf(emporiaSms), "com.emporia.mms", avoidOem = true, preferredPackages = preferred),
+        )
+    }
+
+    @Test
     fun noCandidatesMeansNoChoice() {
         assertNull(RoleRanking.choose(emptyList(), "com.android.dialer", avoidOem = true))
     }
