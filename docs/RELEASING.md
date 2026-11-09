@@ -1,16 +1,18 @@
 # Releases
 
-Releases baut GitHub Actions (`.github/workflows/release.yml`), sobald ein Tag `vX.Y.Z` gepusht wird:
+Releases baut GitHub Actions (`.github/workflows/release.yml`):
 
 1. `versionCode` und `versionName` in `app/build.gradle.kts` erhöhen.
 2. Release-Notes unter `docs/release-notes/vX.Y.Z.md` anlegen.
-3. Committen, dann Tag setzen und pushen:
+3. Committen und pushen. Sobald die Release-Notes für die aktuelle `versionName` auf GitHub sind und es noch kein Tag `vX.Y.Z` gibt, legt der Workflow Tag **und** Release selbst an.
+   Alternativ manuell taggen:
    ```
    git tag vX.Y.Z
    git push origin vX.Y.Z
    ```
 
-Der Workflow bricht ab, wenn Tag und `versionName` nicht übereinstimmen, führt Tests und Lint aus, baut eine R8-optimierte, signierte APK, prüft Signatur und Paketdaten und veröffentlicht APK + SHA-256 als GitHub-Release.
+Eine Version, die bereits ein Tag hat, wird nie ein zweites Mal veröffentlicht.
+Der Workflow bricht ab, wenn ein gepushtes Tag nicht zur `versionName` passt, führt Tests und Lint aus, baut eine R8-optimierte, signierte APK, prüft Signatur und Paketdaten und veröffentlicht APK + SHA-256 als GitHub-Release.
 
 ## Dauerhafter Signaturschlüssel (einmalig einrichten)
 

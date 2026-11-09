@@ -1,9 +1,17 @@
 name: Release
 
-# Push a tag like v0.0.1 to build, test, sign and publish a GitHub release.
+# Publishes a GitHub release in either of two ways:
+#  1. push a tag like v0.0.1, or
+#  2. push release notes docs/release-notes/vX.Y.Z.md for the versionName in
+#     app/build.gradle.kts – the workflow then creates the tag itself.
+# A version that already has a tag is never released twice.
 on:
   push:
     tags: ["v*"]
+    branches: ["**"]
+    paths:
+      - "docs/release-notes/**"
+      - ".github/workflows/release.yml"
 
 permissions:
   contents: write
@@ -14,33 +22,52 @@ concurrency:
 
 jobs:
   release:
-    name: Build & publish ${{ github.ref_name }}
+    name: Build & publish release
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
-      - name: Tag must match versionName
+      - name: Determine version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           version=$(sed -nE 's/^[[:space:]]*versionName = "([^"]+)".*/\1/p' app/build.gradle.kts)
-          echo "versionName=$version, tag=$GITHUB_REF_NAME"
-          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match versionName $version in app/build.gradle.kts"
-            exit 1
-          fi
+          [ -n "$version" ] || { echo "::error::versionName not found in app/build.gradle.kts"; exit 1; }
           echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "TAG=v$version" >> "$GITHUB_ENV"
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+              echo "::error::Tag $GITHUB_REF_NAME does not match versionName $version in app/build.gradle.kts"
+              exit 1
+            fi
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          elif [ ! -f "docs/release-notes/v$version.md" ]; then
+            echo "No release notes for v$version – nothing to release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          elif gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$version" >/dev/null 2>&1; then
+            echo "v$version is already tagged – nothing to release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Releasing v$version from $GITHUB_REF_NAME @ $GITHUB_SHA"
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: actions/setup-java@v6
+        if: steps.version.outputs.release == 'true'
         with:
           distribution: temurin
           java-version: "17"
 
       - uses: gradle/actions/setup-gradle@v6
+        if: steps.version.outputs.release == 'true'
         with:
           cache-read-only: true
 
       - name: Prepare signing key
+        if: steps.version.outputs.release == 'true'
         env:
           KEYSTORE_BASE64: ${{ secrets.LAYERNX_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.LAYERNX_KEYSTORE_PASSWORD }}
@@ -78,15 +105,18 @@ jobs:
           echo "LAYERNX_KEYSTORE_FILE=$keystore" >> "$GITHUB_ENV"
 
       - name: Tests, lint and signed release build
+        if: steps.version.outputs.release == 'true'
         run: ./gradlew --no-daemon --stacktrace testDebugUnitTest lintDebug assembleRelease
 
       - name: Verify signature and package
+        if: steps.version.outputs.release == 'true'
         run: |
           set -euo pipefail
           build_tools="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
           apk=app/build/outputs/apk/release/app-release.apk
           "$build_tools/apksigner" verify --verbose --print-certs "$apk" | tee "$RUNNER_TEMP/signature.txt"
-          "$build_tools/aapt2" dump badging "$apk" | head -1 | tee "$RUNNER_TEMP/badging.txt"
+          "$build_tools/aapt2" dump badging "$apk" > "$RUNNER_TEMP/badging.txt"
+          head -n 1 "$RUNNER_TEMP/badging.txt"
           grep -q "versionName='$VERSION'" "$RUNNER_TEMP/badging.txt"
           grep -q "package: name='com.layernx.launcher'" "$RUNNER_TEMP/badging.txt"
 
@@ -97,10 +127,11 @@ jobs:
           echo "CERT_SHA256=$cert" >> "$GITHUB_ENV"
 
       - name: Remove signing key
-        if: always()
+        if: always() && steps.version.outputs.release == 'true'
         run: rm -f "$RUNNER_TEMP/layernx-release.jks"
 
       - name: Publish GitHub release
+        if: steps.version.outputs.release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -120,9 +151,14 @@ jobs:
               echo "> Diese Version wurde mit einem einmaligen Schlüssel signiert. Spätere Versionen mit dem dauerhaften Release-Schlüssel erfordern einmalig eine Neuinstallation (Einstellungen von LayerNX gehen dabei verloren)."
             fi
           } > "$RUNNER_TEMP/notes.md"
-          gh release create "$GITHUB_REF_NAME" \
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            target_args=(--verify-tag)
+          else
+            target_args=(--target "$GITHUB_SHA")
+          fi
+          gh release create "$TAG" \
             --title "LayerNX $VERSION" \
             --notes-file "$RUNNER_TEMP/notes.md" \
-            --verify-tag \
+            "${target_args[@]}" \
             "dist/LayerNX-v$VERSION.apk" \
             "dist/LayerNX-v$VERSION.apk.sha256"
