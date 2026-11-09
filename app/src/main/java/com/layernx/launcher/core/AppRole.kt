@@ -91,6 +91,16 @@ enum class AppRole(
     }
 
     /**
+     * Apps that win the automatic choice whenever they are installed, ahead of Android's own
+     * default. "Nachrichten" means WhatsApp on this phone; SMS stays reachable via "Alle Apps".
+     */
+    val preferredPackages: List<String>
+        get() = when (this) {
+            MESSAGES -> listOf(WHATSAPP, WHATSAPP_BUSINESS)
+            else -> emptyList()
+        }
+
+    /**
      * The intent Android resolves to the user's system-wide default for this role, or null
      * when Android has no notion of a default (e.g. calculators).
      */
@@ -103,6 +113,9 @@ enum class AppRole(
     }
 
     companion object {
+        const val WHATSAPP = "com.whatsapp"
+        const val WHATSAPP_BUSINESS = "com.whatsapp.w4b"
+
         private val SAMPLE_IMAGE: Uri = Uri.parse("content://media/external/images/media/1")
         private val SAMPLE_AUDIO: Uri = Uri.parse("content://media/external/audio/media/1")
 

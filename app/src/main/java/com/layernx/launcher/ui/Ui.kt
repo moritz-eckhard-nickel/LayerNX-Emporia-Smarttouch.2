@@ -28,7 +28,6 @@ object Palette {
     const val BORDER_SOFT: Int = 0xFF292B33.toInt()
     const val INPUT: Int = 0xFF242630.toInt()
     const val INPUT_BORDER: Int = 0xFF414451.toInt()
-    const val SOFTKEY_BORDER: Int = 0xFF42444F.toInt()
     const val FOCUS_RING: Int = Color.WHITE
     const val RIPPLE: Int = 0x33FFFFFF
 }

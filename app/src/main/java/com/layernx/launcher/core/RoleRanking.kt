@@ -11,6 +11,7 @@ data class RoleCandidate(
  * Decides which app LayerNX opens for a role when the user has not picked one.
  *
  * Order (best first):
+ * 0. the role's preferred apps in their given order (e.g. WhatsApp for "Nachrichten"),
  * 1. the app Android itself would use (the user's system-wide default), unless it is an
  *    Emporia app and Emporia apps are to be avoided,
  * 2. apps the user installed themselves (e.g. Firefox, Open Camera, Simple Gallery),
@@ -28,10 +29,12 @@ object RoleRanking {
         candidates: List<RoleCandidate>,
         systemDefaultPackage: String?,
         avoidOem: Boolean,
+        preferredPackages: List<String> = emptyList(),
     ): List<RoleCandidate> {
         val unique = candidates.distinctBy { it.packageName }
         return unique.sortedWith(
-            compareBy<RoleCandidate> { score(it, systemDefaultPackage, avoidOem) }
+            compareBy<RoleCandidate> { preferredPackages.indexOf(it.packageName).let { i -> if (i < 0) Int.MAX_VALUE else i } }
+                .thenBy { score(it, systemDefaultPackage, avoidOem) }
                 .thenBy { it.label.lowercase() }
                 .thenBy { it.packageName },
         )
@@ -41,7 +44,8 @@ object RoleRanking {
         candidates: List<RoleCandidate>,
         systemDefaultPackage: String?,
         avoidOem: Boolean,
-    ): RoleCandidate? = rank(candidates, systemDefaultPackage, avoidOem).firstOrNull()
+        preferredPackages: List<String> = emptyList(),
+    ): RoleCandidate? = rank(candidates, systemDefaultPackage, avoidOem, preferredPackages).firstOrNull()
 
     private fun score(candidate: RoleCandidate, systemDefault: String?, avoidOem: Boolean): Int {
         val oem = avoidOem && isOemPackage(candidate.packageName)

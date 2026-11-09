@@ -32,6 +32,8 @@ object FakeDevice {
         val label: String,
         val system: Boolean,
         val filters: List<IntentFilter>,
+        /** Further activities: class name, whether it is a start-screen entry, intent filters. */
+        val extraActivities: List<Triple<String, Boolean, List<IntentFilter>>> = emptyList(),
     )
 
     private fun filter(action: String, category: String? = null, scheme: String? = null, mime: String? = null) =
@@ -78,6 +80,15 @@ object FakeDevice {
             listOf(filter(Intent.ACTION_MAIN, Intent.CATEGORY_APP_GALLERY)),
         ),
         FakeApp("org.telegram.messenger", "org.telegram.ui.LaunchActivity", "Telegram", false, emptyList()),
+        // WhatsApp: its start entry handles no messaging intents, a second start entry exists, and
+        // "smsto:" goes to a conversation screen that closes without a recipient.
+        FakeApp(
+            "com.whatsapp", "com.whatsapp.Main", "WhatsApp", false, emptyList(),
+            extraActivities = listOf(
+                Triple("com.whatsapp.Conversation", false, listOf(filter(Intent.ACTION_SENDTO, scheme = "smsto"))),
+                Triple("com.whatsapp.AlternateIcon", true, emptyList()),
+            ),
+        ),
         FakeApp("com.android.settings", "com.android.settings.Settings", "Einstellungen", true, emptyList()),
         FakeApp("com.emporia.deskclock", "com.emporia.deskclock.MainActivity", "Uhr", true, emptyList()),
         FakeApp("com.emporia.weather", "com.emporia.weather.MainActivity", "Wetter", true, emptyList()),
@@ -114,6 +125,22 @@ object FakeDevice {
                 IntentFilter(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_LAUNCHER) },
             )
             fake.filters.forEach { pm.addIntentFilterForActivity(component, it) }
+            fake.extraActivities.forEach { (className, isLauncher, filters) ->
+                val extra = ComponentName(fake.pkg, className)
+                pm.addOrUpdateActivity(
+                    pm.addActivityIfNotPresent(extra).apply {
+                        applicationInfo = appInfo
+                        exported = true
+                    },
+                )
+                if (isLauncher) {
+                    pm.addIntentFilterForActivity(
+                        extra,
+                        IntentFilter(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_LAUNCHER) },
+                    )
+                }
+                filters.forEach { pm.addIntentFilterForActivity(extra, it) }
+            }
 
             val launcherInfo = ReflectionHelpers.callConstructor(
                 LauncherActivityInfo::class.java,

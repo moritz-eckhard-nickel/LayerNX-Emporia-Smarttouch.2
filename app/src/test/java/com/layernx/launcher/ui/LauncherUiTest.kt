@@ -58,11 +58,28 @@ class LauncherUiTest {
         }
         assertEquals(listOf("Telefon", "Nachrichten", "Kamera"), labels)
 
+        // Always German, regardless of the system language.
+        val date = activity.findViewById<TextView>(R.id.date).text.toString()
+        val weekdays = "Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag"
+        val months = "Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember"
+        assertTrue(date, Regex("^($weekdays), \\d{1,2}\\. ($months)$").matches(date))
+
         // Everything must fit on the real screen without scrolling.
         val root = activity.findViewById<ScrollView>(R.id.home_root)
         val content = root.getChildAt(0)
         assertTrue("Home content ${content.height}px exceeds ${root.height}px", content.height <= root.height)
         FakeDevice.screenshot(activity.window.decorView, "home")
+    }
+
+    @Test
+    fun longestNameStillFitsOnScreen() {
+        Prefs(context).userName = "Maximilian-Alexand" // 18 characters = the input limit
+        val activity = Robolectric.buildActivity(HomeActivity::class.java).setup().visible().get()
+        FakeDevice.settle()
+        val root = activity.findViewById<ScrollView>(R.id.home_root)
+        val content = root.getChildAt(0)
+        assertTrue("Home content ${content.height}px exceeds ${root.height}px", content.height <= root.height)
+        FakeDevice.screenshot(activity.window.decorView, "home_long_name")
     }
 
     @Test
@@ -131,8 +148,12 @@ class LauncherUiTest {
         assertEquals("org.mozilla.firefox", resolver.resolve(AppRole.BROWSER)?.packageName)
         assertEquals("com.android.dialer", resolver.resolve(AppRole.PHONE)?.packageName)
         assertEquals("com.mediatek.camera", resolver.resolve(AppRole.CAMERA)?.packageName)
-        // Only Emporia offers messaging on stock firmware: it stays usable as the last resort.
-        assertEquals("com.emporia.mms", resolver.resolve(AppRole.MESSAGES)?.packageName)
+        // "Nachrichten" means WhatsApp whenever it is installed – ahead of the SMS default.
+        assertEquals("com.whatsapp", resolver.resolve(AppRole.MESSAGES)?.packageName)
+        assertEquals(
+            listOf("com.whatsapp", "com.emporia.mms"),
+            resolver.rankedCandidates(AppRole.MESSAGES).map { it.packageName },
+        )
 
         prefs.setRoleApp(AppRole.BROWSER, "com.emporia.browser")
         val manual = resolver.resolve(AppRole.BROWSER)
@@ -141,6 +162,37 @@ class LauncherUiTest {
 
         prefs.setRoleApp(AppRole.BROWSER, "uninstalled.app")
         assertEquals("org.mozilla.firefox", resolver.resolve(AppRole.BROWSER)?.packageName)
+    }
+
+    @Test
+    fun chosenWhatsAppOpensItsStartScreenNotAnEmptyConversation() {
+        // Exactly what the user did: pick WhatsApp by hand for "Nachrichten".
+        Prefs(context).setRoleApp(AppRole.MESSAGES, "com.whatsapp")
+        val controller = Robolectric.buildActivity(HomeActivity::class.java).setup().visible()
+        controller.get().findViewById<View>(R.id.dock_1).performClick()
+
+        val started = shadowOf(controller.get()).nextStartedActivity
+        assertNotNull("Nothing was started", started)
+        assertEquals(Intent.ACTION_MAIN, started.action)
+        assertTrue(started.hasCategory(Intent.CATEGORY_LAUNCHER))
+        assertEquals("com.whatsapp", started.component?.packageName)
+        assertTrue(started.component?.className != "com.whatsapp.Conversation")
+        assertTrue(started.flags and Intent.FLAG_ACTIVITY_NEW_TASK != 0)
+    }
+
+    @Test
+    fun everyOfferedAppCanBeOpened() {
+        val resolver = RoleResolver(context, Prefs(context))
+        AppRole.entries.forEach { role ->
+            resolver.rankedCandidates(role).forEach { candidate ->
+                val intent = resolver.launchIntent(role, candidate.packageName)
+                assertNotNull("${candidate.packageName} for $role", intent)
+                assertTrue(
+                    "${candidate.packageName} for $role would be opened with ${intent!!.action} ${intent.data}",
+                    intent.data == null,
+                )
+            }
+        }
     }
 
     @Test
